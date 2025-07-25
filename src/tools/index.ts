@@ -1,6 +1,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { calculatorTool } from './calculatorTool.js';
 import { timestampTool } from './timestampTool.js';
+import { fetchLatestNovelTool } from './fetchLatestNovelTool.js';
+import { fetchNovelDetailsTool } from './fetchNovelDetailsTool.js';
+import { fetchChapterContentTool } from './fetchChapterContentTool.js';
+import { applyTranslationCorrectionsTool } from './applyTranslationCorrectionsTool.js';
 
 /**
  * Register all tools with the MCP server
@@ -12,6 +16,18 @@ export function registerTools(server: McpServer): void {
 
   // Register timestamp tool
   timestampTool(server);
+
+  // Register fetch latest novel tool
+  fetchLatestNovelTool(server);
+
+  // Register fetch novel details tool
+  fetchNovelDetailsTool(server);
+
+  // Register fetch chapter content tool
+  fetchChapterContentTool(server);
+
+  // Register apply translation corrections tool
+  applyTranslationCorrectionsTool(server);
 
   // Add more tools here
 }

@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { greetingPrompt } from './greetingPrompt.js';
 import { analyzeDataPrompt } from './analyzeDataPrompt.js';
+import { correctTranslationPrompt } from './correctTranslationPrompt.js';
 
 /**
  * Register all prompts with the MCP server
@@ -12,6 +13,9 @@ export function registerPrompts(server: McpServer): void {
 
   // Register analyze data prompt
   analyzeDataPrompt(server);
+
+  // Register correct translation prompt
+  correctTranslationPrompt(server);
 
   // Add more prompts here
 }

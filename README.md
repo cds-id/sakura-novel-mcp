@@ -1,13 +1,14 @@
-# MCP Server Boilerplate
+# Sakura Novel MCP Server
 
 [![MCP TypeScript SDK NPM Version](https://img.shields.io/npm/v/@modelcontextprotocol/sdk)](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A boilerplate server implementation for the Model Context Protocol (MCP), built with TypeScript and Express.
+A Model Context Protocol (MCP) server for fetching and processing Indonesian light novel content from sakuranovel.id, with built-in machine translation correction capabilities.
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Features](#features)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
@@ -16,50 +17,65 @@ A boilerplate server implementation for the Model Context Protocol (MCP), built 
 - [Running the Server](#running-the-server)
   - [HTTP Server](#http-server)
   - [Stdio Mode](#stdio-mode)
-- [Resources](#resources)
-- [Tools](#tools)
-- [Prompts](#prompts)
-- [Extending the Server](#extending-the-server)
-  - [Adding Resources](#adding-resources)
-  - [Adding Tools](#adding-tools)
-  - [Adding Prompts](#adding-prompts)
-- [Testing and Debugging](#testing-and-debugging)
+- [Available Tools](#available-tools)
+- [Available Resources](#available-resources)
+- [Available Prompts](#available-prompts)
+- [Translation Correction System](#translation-correction-system)
+- [Testing](#testing)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
 
-This project implements a server that follows the Model Context Protocol (MCP), which allows applications to provide context for LLMs in a standardized way. It includes:
+This MCP server provides tools and resources for interacting with sakuranovel.id, an Indonesian light novel website. Since the content on sakuranovel.id is machine-translated from various languages (English, Chinese, Japanese) to Indonesian, this server includes a comprehensive translation correction system to fix common machine translation errors.
 
-- A fully configured MCP server with HTTP and stdio transport options
-- Sample resources, tools, and prompts to demonstrate key functionality
-- TypeScript support for type safety and better developer experience
-- Express integration for the HTTP transport layer
+## Features
+
+- 📚 **Novel Content Fetching**: Retrieve latest novels, novel details, and chapter content
+- 🔧 **Translation Correction**: Automatically detect and correct common machine translation errors
+- 📖 **Translation Guide**: Comprehensive resource for understanding translation patterns
+- 🛠️ **Multiple Transport Options**: Supports both HTTP and stdio communication
+- 📝 **TypeScript Support**: Full type safety and better developer experience
+- ✅ **Comprehensive Tests**: Jest test suite for all tools
 
 ## Project Structure
 
 ```
-mcp-server-boilerplate/
-├── .env                  # Environment variables
-├── .env.example          # Example environment variables
-├── .gitignore            # Git ignore file
-├── package.json          # Project dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
+sakura-novel-mcp/
+├── .env                           # Environment variables
+├── .env.example                   # Example environment variables
+├── .gitignore                     # Git ignore file
+├── package.json                   # Project dependencies and scripts
+├── tsconfig.json                  # TypeScript configuration
+├── jest.config.js                 # Jest testing configuration
 ├── src/
-│   ├── index.ts          # Main HTTP server entry point
-│   ├── stdio.ts          # Stdio server entry point
-│   ├── resources/        # MCP resources
-│   │   ├── index.ts      # Resource registration
-│   │   ├── infoResource.ts # Static info resource
-│   │   └── greetingResource.ts # Dynamic greeting resource
-│   ├── tools/            # MCP tools
-│   │   ├── index.ts      # Tool registration
-│   │   ├── calculatorTool.ts # Sample calculator tool
-│   │   └── timestampTool.ts # Sample timestamp tool
-│   └── prompts/          # MCP prompts
-│       ├── index.ts      # Prompt registration
-│       ├── greetingPrompt.ts # Sample greeting prompt
-│       └── analyzeDataPrompt.ts # Sample data analysis prompt
-└── dist/                 # Compiled JavaScript output
+│   ├── index.ts                   # Main HTTP server entry point
+│   ├── stdio.ts                   # Stdio server entry point
+│   ├── config/
+│   │   └── httpConfig.ts          # HTTP headers configuration for sakuranovel.id
+│   ├── types/
+│   │   └── novel.types.ts         # TypeScript type definitions
+│   ├── resources/                 # MCP resources
+│   │   ├── index.ts               # Resource registration
+│   │   ├── infoResource.ts        # Server information resource
+│   │   ├── greetingResource.ts    # Dynamic greeting resource
+│   │   └── translationGuideResource.ts # Translation correction guide
+│   ├── tools/                     # MCP tools
+│   │   ├── index.ts               # Tool registration
+│   │   ├── fetchLatestNovelTool.ts # Fetch latest novels
+│   │   ├── fetchNovelDetailsTool.ts # Fetch novel details
+│   │   ├── fetchChapterContentTool.ts # Fetch chapter content
+│   │   ├── applyTranslationCorrectionsTool.ts # Apply translation fixes
+│   │   ├── calculatorTool.ts      # Sample calculator tool
+│   │   └── timestampTool.ts       # Sample timestamp tool
+│   ├── prompts/                   # MCP prompts
+│   │   ├── index.ts               # Prompt registration
+│   │   ├── greetingPrompt.ts      # Sample greeting prompt
+│   │   ├── analyzeDataPrompt.ts   # Sample data analysis prompt
+│   │   └── correctTranslationPrompt.ts # Translation correction guidance
+│   └── __tests__/                 # Test files
+│       └── tools/                 # Tool tests
+└── dist/                          # Compiled JavaScript output
 ```
 
 ## Getting Started
@@ -74,8 +90,8 @@ mcp-server-boilerplate/
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/yourusername/mcp-server-boilerplate.git
-cd mcp-server-boilerplate
+git clone https://github.com/yourusername/sakura-novel-mcp.git
+cd sakura-novel-mcp
 npm install
 ```
 
@@ -91,7 +107,6 @@ Available environment variables:
 
 - `PORT`: The port for the HTTP server (default: 3000)
 - `NODE_ENV`: Environment mode (development, production)
-- OAuth settings (if needed)
 
 ## Running the Server
 
@@ -110,7 +125,11 @@ For development with auto-restart:
 npm run dev
 ```
 
-The server will be available at `http://localhost:3000/mcp` (or the port specified in your .env file).
+The server will be available at:
+
+- Main endpoint: `http://localhost:3000/mcp`
+- SSE endpoint: `http://localhost:3000/sse/connect`
+- Health check: `http://localhost:3000/health`
 
 ### Stdio Mode
 
@@ -126,170 +145,168 @@ For development with auto-restart:
 npm run dev:stdio
 ```
 
-## Resources
+## Available Tools
 
-The boilerplate includes these example resources:
+### 1. **fetch-latest-novels**
 
-1. **Static Info Resource**: `info://server`
+Fetches the latest novel updates from sakuranovel.id.
 
-   - Provides basic information about the server
+Parameters:
 
-2. **Dynamic Greeting Resource**: `greeting://{name}`
-   - Generates a personalized greeting with the provided name parameter
+- `page` (number, optional): Page number to fetch (default: 1)
+- `limit` (number, optional): Maximum number of novels to return (1-50, default: 20)
 
-To access resources:
+Returns: List of novels with their latest chapters, thumbnails, and metadata.
 
-- Through the MCP protocol
-- Using an MCP client library
+### 2. **fetch-novel-details**
 
-## Tools
+Fetches detailed information about a specific novel.
 
-The boilerplate includes these example tools:
+Parameters:
 
-1. **Calculator**: Performs basic arithmetic operations
+- `seriesUrl` (string): The URL of the novel series page
+- `includeChapters` (boolean, optional): Whether to include chapter list (default: true)
+- `maxChapters` (number, optional): Maximum chapters to include (1-1000, default: 50)
 
-   - Parameters:
-     - `operation`: Operation to perform (add, subtract, multiply, divide)
-     - `a`: First number
-     - `b`: Second number
+Returns: Novel details including title, author, genres, tags, synopsis, and chapters.
 
-2. **Timestamp**: Provides the current time in various formats
-   - Parameters:
-     - `format`: Output format (iso, unix, readable)
+### 3. **fetch-chapter-content**
 
-## Prompts
+Fetches and parses the content of a specific chapter.
 
-The boilerplate includes these example prompts:
+Parameters:
 
-1. **Greeting**: Creates a personalized greeting prompt
+- `chapterUrl` (string): The URL of the chapter page
+- `includeMetadata` (boolean, optional): Include metadata like word count (default: true)
 
-   - Parameters:
-     - `name`: Name to greet
-     - `formal`: Whether to use formal greeting style (optional)
+Returns: Chapter content with optional metadata and translation quality note.
 
-2. **Analyze Data**: Creates a prompt for data analysis
-   - Parameters:
-     - `data`: The data to analyze
-     - `format`: Data format (json, csv, text)
-     - `instructions`: Additional analysis instructions (optional)
+### 4. **apply-translation-corrections**
 
-## Extending the Server
+Applies automatic translation corrections to Indonesian text.
 
-### Adding Resources
+Parameters:
 
-To add a new resource:
+- `text` (string): The Indonesian text to correct
+- `aggressive` (boolean, optional): Apply aggressive corrections including formatting (default: false)
+- `showCorrections` (boolean, optional): Show list of corrections made (default: true)
 
-1. Create a new file in `src/resources/` (e.g., `myResource.ts`)
-2. Implement your resource handler
-3. Register it in `src/resources/index.ts`
+Returns: Corrected text with optional correction details.
 
-Example:
+### 5. **calculate** (Sample Tool)
 
-```typescript
-// myResource.ts
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+Performs basic arithmetic operations.
 
-export function myResource(server: McpServer): void {
-  server.resource('my-resource', 'my-resource://path', async uri => ({
-    contents: [
-      {
-        uri: uri.href,
-        text: 'My resource content',
-      },
-    ],
-  }));
-}
+Parameters:
 
-// Then add to resources/index.ts
-import { myResource } from './myResource.js';
+- `operation`: Operation type (add, subtract, multiply, divide)
+- `a`: First number
+- `b`: Second number
 
-export function registerResources(server: McpServer): void {
-  // ...existing resources
-  myResource(server);
-}
+### 6. **timestamp** (Sample Tool)
+
+Provides current timestamp in various formats.
+
+Parameters:
+
+- `format`: Output format (iso, unix, readable)
+
+## Available Resources
+
+### 1. **info://server**
+
+Provides basic information about the server, including version and capabilities.
+
+### 2. **greeting://{name}**
+
+Dynamic resource that generates personalized greetings.
+
+### 3. **guide://translation/corrections**
+
+Comprehensive translation correction guide with detailed tables of common errors and their fixes.
+
+## Available Prompts
+
+### 1. **greeting**
+
+A simple greeting prompt for introductions.
+
+### 2. **analyze-data**
+
+A prompt template for data analysis tasks.
+
+### 3. **correct-translation**
+
+Detailed guidance for AI to correct machine translation errors in Indonesian light novel content.
+
+## Translation Correction System
+
+The server includes a sophisticated system for handling machine translation errors commonly found in Indonesian light novel content:
+
+### Common Corrections
+
+1. **Race/Species Terms**
+
+   - "Kulit Binatang" → "Ras Binatang" (Beastskin)
+   - "Kulit Naga" → "Ras Naga" (Dragonkin)
+   - "Peri" → "Elf" (when referring to the race)
+
+2. **Gaming/RPG Terms**
+
+   - Preserves English terms like "Skill", "Level", "Guild", "Dungeon"
+   - Corrects overly literal translations
+
+3. **Cultivation/Xianxia Terms**
+
+   - "Pertanian" → "Kultivasi" (Cultivation)
+   - "Batu Semangat" → "Batu Roh" (Spirit Stone)
+
+4. **Natural Indonesian Phrasing**
+   - "Apakah kamu memiliki" → "Kamu punya"
+   - "Aku akan pergi ke sana" → "Aku mau ke sana"
+
+### Using the Translation System
+
+1. **Automatic Correction**: Use the `apply-translation-corrections` tool
+2. **AI Guidance**: Use the `correct-translation` prompt for AI-assisted correction
+3. **Reference Guide**: Access `guide://translation/corrections` for comprehensive guidelines
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm test
 ```
 
-### Adding Tools
+Run tests in watch mode:
 
-To add a new tool:
-
-1. Create a new file in `src/tools/` (e.g., `myTool.ts`)
-2. Implement your tool handler
-3. Register it in `src/tools/index.ts`
-
-Example:
-
-```typescript
-// myTool.ts
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-
-export function myTool(server: McpServer): void {
-  server.tool('my-tool', { param: z.string() }, async ({ param }) => ({
-    content: [
-      {
-        type: 'text',
-        text: `Processed: ${param}`,
-      },
-    ],
-  }));
-}
-
-// Then add to tools/index.ts
-import { myTool } from './myTool.js';
-
-export function registerTools(server: McpServer): void {
-  // ...existing tools
-  myTool(server);
-}
+```bash
+npm run test:watch
 ```
 
-### Adding Prompts
+## Contributing
 
-To add a new prompt:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-1. Create a new file in `src/prompts/` (e.g., `myPrompt.ts`)
-2. Implement your prompt handler
-3. Register it in `src/prompts/index.ts`
+### Adding New Features
 
-Example:
+When adding new translation rules:
 
-```typescript
-// myPrompt.ts
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-
-export function myPrompt(server: McpServer): void {
-  server.prompt('my-prompt', { topic: z.string() }, ({ topic }) => ({
-    messages: [
-      {
-        role: 'user',
-        content: {
-          type: 'text',
-          text: `Please explain ${topic} in simple terms.`,
-        },
-      },
-    ],
-  }));
-}
-
-// Then add to prompts/index.ts
-import { myPrompt } from './myPrompt.js';
-
-export function registerPrompts(server: McpServer): void {
-  // ...existing prompts
-  myPrompt(server);
-}
-```
-
-## Testing and Debugging
-
-To test your MCP server, you can use:
-
-- The MCP Inspector tool
-- MCP client libraries
-- Direct HTTP requests (for debugging)
+1. Add the pattern to `src/tools/applyTranslationCorrectionsTool.ts`
+2. Update the translation guide resource
+3. Add corresponding tests
+4. Update documentation
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Built with the [Model Context Protocol SDK](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
+- Content sourced from [sakuranovel.id](https://sakuranovel.id)

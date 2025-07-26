@@ -8,7 +8,7 @@ import type { ChapterContent } from '../types/novel.types.js';
 /**
  * Extract chapter content from the page
  */
-function extractChapterContent($: CheerioAPI, url: string): ChapterContent {
+function extractChapterContent($: CheerioAPI, url: string, debug: boolean = false): ChapterContent {
   // Extract title from various possible locations
   let title = '';
 
@@ -25,20 +25,76 @@ function extractChapterContent($: CheerioAPI, url: string): ChapterContent {
     }
   }
 
-  // Extract paragraphs
+  // Extract paragraphs - try multiple selectors
   const paragraphs: string[] = [];
-  $('#content p.ds-markdown-paragraph').each((_, element) => {
+  const debugInfo: string[] = [];
+
+  // First try: Look for entry-content inside tldariinggrissendiribrojangancopy
+  const selector1 = '.tldariinggrissendiribrojangancopy .entry-content p';
+  const count1 = $(selector1).length;
+  if (debug) debugInfo.push(`Selector '${selector1}' found ${count1} elements`);
+
+  $(selector1).each((_, element) => {
     const text = $(element).text().trim();
-    if (text) {
+    // Skip the "Baca novel lain di sakuranovel" footer text
+    if (text && !text.includes('Baca novel lain di sakuranovel')) {
       paragraphs.push(text);
     }
   });
 
-  // If no paragraphs with ds-markdown-paragraph class, try regular p tags
+  // Second try: Direct selector for ds-markdown-paragraph
   if (paragraphs.length === 0) {
-    $('#content p').each((_, element) => {
+    const selector2 = '#content p.ds-markdown-paragraph';
+    const count2 = $(selector2).length;
+    if (debug) debugInfo.push(`Selector '${selector2}' found ${count2} elements`);
+
+    $(selector2).each((_, element) => {
       const text = $(element).text().trim();
       if (text) {
+        paragraphs.push(text);
+      }
+    });
+  }
+
+  // Third try: Look inside tldariinggrissendiribrojangancopy with any p tags
+  if (paragraphs.length === 0) {
+    const selector3 = '.tldariinggrissendiribrojangancopy p';
+    const count3 = $(selector3).length;
+    if (debug) debugInfo.push(`Selector '${selector3}' found ${count3} elements`);
+
+    $(selector3).each((_, element) => {
+      const text = $(element).text().trim();
+      // Skip the "Baca novel lain di sakuranovel" footer text
+      if (text && !text.includes('Baca novel lain di sakuranovel')) {
+        paragraphs.push(text);
+      }
+    });
+  }
+
+  // Fourth try: Any p tag with ds-markdown-paragraph class
+  if (paragraphs.length === 0) {
+    const selector4 = 'p.ds-markdown-paragraph';
+    const count4 = $(selector4).length;
+    if (debug) debugInfo.push(`Selector '${selector4}' found ${count4} elements`);
+
+    $(selector4).each((_, element) => {
+      const text = $(element).text().trim();
+      if (text) {
+        paragraphs.push(text);
+      }
+    });
+  }
+
+  // Last resort: regular p tags inside content
+  if (paragraphs.length === 0) {
+    const selector5 = '#content p';
+    const count5 = $(selector5).length;
+    if (debug) debugInfo.push(`Selector '${selector5}' found ${count5} elements`);
+
+    $(selector5).each((_, element) => {
+      const text = $(element).text().trim();
+      // Avoid picking up non-content paragraphs
+      if (text && !text.includes('Baca novel lain di sakuranovel')) {
         paragraphs.push(text);
       }
     });
@@ -47,12 +103,19 @@ function extractChapterContent($: CheerioAPI, url: string): ChapterContent {
   // Join paragraphs with double newlines for full content
   const content = paragraphs.join('\n\n');
 
-  return {
+  // Add debug info if enabled
+  const result: ChapterContent & { debugInfo?: string[] } = {
     title,
     content,
     paragraphs,
     url,
   };
+
+  if (debug) {
+    result.debugInfo = debugInfo;
+  }
+
+  return result;
 }
 
 /**
@@ -69,8 +132,13 @@ export function fetchChapterContentTool(server: McpServer): void {
         .optional()
         .default(true)
         .describe('Whether to include metadata like title and paragraph count'),
+      debug: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe('Enable debug mode to show selector information'),
     },
-    async ({ chapterUrl, includeMetadata }) => {
+    async ({ chapterUrl, includeMetadata, debug }) => {
       try {
         // Validate URL is from sakuranovel.id
         const url = new URL(chapterUrl);
@@ -90,7 +158,7 @@ export function fetchChapterContentTool(server: McpServer): void {
         const $ = cheerio.load(html);
 
         // Extract chapter content
-        const chapterContent = extractChapterContent($, chapterUrl);
+        const chapterContent = extractChapterContent($, chapterUrl, debug);
 
         // Prepare response based on includeMetadata flag
         let resultData: any = {
@@ -107,6 +175,9 @@ export function fetchChapterContentTool(server: McpServer): void {
             characterCount: chapterContent.content.length,
             translationNote:
               'This content is machine-translated from English/Chinese/Japanese to Indonesian. Common issues include: "Beastskin" translated as "Kulit Binatang" instead of "Ras Binatang", literal translations of fantasy terms, and awkward sentence structures. Use the "correct-translation" prompt for guidance on fixing these issues.',
+            ...(debug && (chapterContent as any).debugInfo
+              ? { debugInfo: (chapterContent as any).debugInfo }
+              : {}),
           };
         }
 

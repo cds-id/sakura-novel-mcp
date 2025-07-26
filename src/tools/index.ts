@@ -5,6 +5,7 @@ import { fetchLatestNovelTool } from './fetchLatestNovelTool.js';
 import { fetchNovelDetailsTool } from './fetchNovelDetailsTool.js';
 import { fetchChapterContentTool } from './fetchChapterContentTool.js';
 import { applyTranslationCorrectionsTool } from './applyTranslationCorrectionsTool.js';
+import { searchNovelsTool } from './searchNovelsTool.js';
 
 /**
  * Register all tools with the MCP server
@@ -28,6 +29,9 @@ export function registerTools(server: McpServer): void {
 
   // Register apply translation corrections tool
   applyTranslationCorrectionsTool(server);
+
+  // Register search novels tool
+  searchNovelsTool(server);
 
   // Add more tools here
 }
